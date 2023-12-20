@@ -13,22 +13,26 @@ intents.members = True
 bot = discord.Client(intents=intents)
 tree = app_commands.CommandTree(bot)
 
-# Load hats from a JSON file
-try:
-    with open('hats.json', 'r') as file:
-        data = json.load(file)
-except FileNotFoundError:
-    data = {"hats": {}}
+def load_data(guild_id):
+    filename = f'hats_{guild_id}.json'
+    try:
+        with open(filename, 'r') as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return {"hats": {}}
 
-def save_data():
-    # Save data to a JSON file
-    with open('hats.json', 'w') as file:
+def save_data(data, guild_id):
+    filename = f'hats_{guild_id}.json'
+    with open(filename, 'w') as file:
         json.dump(data, file)
 
 
 @tree.command(name="hats", description="List all available Secret Santa hats.")
 async def list_hats(ctx):
     """List all available Secret Santa hats."""
+
+    data = load_data(ctx.guild_id)
+
     if not data["hats"]:
         await ctx.response.send_message("There are no Secret Santa hats available.")
         return
@@ -39,6 +43,9 @@ async def list_hats(ctx):
 @tree.command(name="join", description="Join a Secret Santa hat!")
 async def join_hat(ctx, hat_name: str = "New Hat"):
     """Join a Secret Santa hat."""
+
+    data = load_data(ctx.guild_id)
+
     if hat_name not in data["hats"]: # creating a hat if need be
         data["hats"][hat_name] = []
     
@@ -50,7 +57,7 @@ async def join_hat(ctx, hat_name: str = "New Hat"):
     
     if ctx.user.id not in [pair["participant"] for pair in data["hats"][hat_name]]:
         data["hats"][hat_name].append({"participant": ctx.user.id, "drawn": -1})
-        save_data()
+        save_data(data, ctx.guild_id)
         await ctx.response.send_message(f'{ctx.user.name} joined the **{hat_name}** Secret Santa hat!')
     else:
         await ctx.response.send_message(f'{ctx.user.name}, you are already in the **{hat_name}** hat.')
@@ -58,6 +65,9 @@ async def join_hat(ctx, hat_name: str = "New Hat"):
 @tree.command(name="draw", description="Draw a Secret Santa name.")
 async def draw_name(ctx, hat_name: str = "New Hat"):
     """Draw a Secret Santa name."""
+    
+    data = load_data(ctx.guild_id)
+
     if hat_name not in data["hats"]:
         await ctx.response.send_message(f'There is no **{hat_name}**! Use /join to add one!')
         return
@@ -79,7 +89,7 @@ async def draw_name(ctx, hat_name: str = "New Hat"):
         drawn_id = random.choice(available_participants) if available_participants else None
 
         drawn_pair["drawn"] = drawn_id
-        save_data()
+        save_data(data, ctx.guild_id)
 
         await ctx.response.send_message(f'{ctx.user.name}, you drew {bot.get_user(drawn_id).name} in the **{hat_name}** hat!', ephemeral=True)
     else:
@@ -89,15 +99,18 @@ async def draw_name(ctx, hat_name: str = "New Hat"):
 @tree.command(name="delete", description="Delete a Secret Santa hat.")
 async def delete_hat(ctx, hat_name: str):
     """Delete a Secret Santa hat."""
+    
+    data = load_data(ctx.guild_id)
+
     if hat_name in data["hats"]:
         del data["hats"][hat_name]
-        save_data()
+        save_data(data, ctx.guild_id)
         await ctx.response.send_message(f'The **{hat_name}** hat has been deleted.')
     else:
         await ctx.response.send_message(f'The **{hat_name}** hat does not exist.')
 
 @tree.command(name="help", description="A list of the commands.")
-async def delete_hat(ctx):
+async def help(ctx):
     """A list of the commands."""
     await ctx.response.send_message(f'/join: use to make a new hat or join an existing one (include name of hat).\n/hats: see a list of all the current hats.\n/delete: delete a hat.\n/draw: draw a name from a hat (include name of hat).\n')
     # await ctx.response.send_message(f'/hats: see a list of all the current hats.\n')
