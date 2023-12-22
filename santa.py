@@ -180,8 +180,3 @@ async def on_ready():
     await tree.sync()
 
 bot.run(TOKEN)
-
-#thigns to fix
-# ✅ edge case: someone can't join hat unless there is at least one person who hasnt drawn
-# add multiple guilds
-# embeds
