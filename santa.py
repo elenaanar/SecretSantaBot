@@ -125,12 +125,41 @@ async def delete_hat(ctx, hat_name: str):
     data = load_data()
     guild_id = str(ctx.guild.id) 
 
+    if guild_id not in data["guilds"]:
+        await ctx.response.send_message("This server doesn't have any Secret Santa hats to delete. Add one with /join!")
+        return
+
     if hat_name in data["guilds"][guild_id]["hats"]:
         del data["guilds"][guild_id]["hats"][hat_name]
         save_data(data)
         await ctx.response.send_message(f'The **{hat_name}** hat has been deleted.')
     else:
         await ctx.response.send_message(f'The **{hat_name}** hat does not exist.')
+
+@tree.command(name="hat_members", description="See all the members of a hat.")
+async def hat_members(ctx, hat_name: str):
+    """See all the members of a hat."""
+    
+    data = load_data()
+    guild_id = str(ctx.guild.id) 
+
+    if guild_id not in data["guilds"]:
+        await ctx.response.send_message("This server doesn't have any Secret Santa hats. Add one with /join!")
+        return
+    if hat_name in data["guilds"][guild_id]["hats"]:
+        participants = data["guilds"][guild_id]["hats"][hat_name]
+        participants_string = ''
+        for pair in participants:
+            username = bot.get_user(pair['participant'])
+            participants_string += (f"- {username}\n")
+        # participants_string = "\n".join([f"- {pair['participant']}" for pair in participants])
+        
+        await ctx.response.send_message(f"Participants in **{hat_name}**:\n{participants_string}")
+    else:
+        await ctx.response.send_message(f"No hat found with the name: {hat_name}")
+    
+
+
 
 @tree.command(name="help", description="A list of the commands.")
 async def help(ctx):
