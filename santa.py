@@ -1,8 +1,9 @@
-import os
 import discord
 from discord import app_commands
+from discord import Embed
 from dotenv import load_dotenv
 import json
+import os
 import random
 
 load_dotenv()
@@ -159,18 +160,18 @@ async def hat_members(ctx, hat_name: str):
         await ctx.response.send_message(f"No hat found with the name: **{hat_name}**")
     
 
-
-
 @tree.command(name="help", description="A list of the commands.")
 async def help(ctx):
-    """A list of the commands."""
-
     response = (f'- **/join**: use to make a new hat or join an existing one. Include hat name.\n')
     response += (f'- **/hats**: see a list of all the current hats.\n')
     response += (f'- **/delete**: delete a hat. Include hat name.\n')
     response += (f'- **/draw**: draw a name from a hat. Include hat name.\n')
     response += (f'- **/hat_members**: see all the members in any hat. Include hat name.')
-    await ctx.response.send_message(f'{response}')
+    embed = Embed(
+        title="Commands:",
+        description=response
+    )
+    await ctx.response.send_message(embed=embed)
 
 
 
