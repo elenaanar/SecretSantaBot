@@ -90,7 +90,7 @@ async def draw_name(ctx, hat_name: str = "New Hat"):
     guild_data = data["guilds"][guild_id]
 
     if hat_name not in guild_data["hats"]:
-        await ctx.response.send_message(f'There is no **{hat_name}**! Use /join to add one!')
+        await ctx.response.send_message(f'There is no **{hat_name}** hat! Use /join to add one!')
         return
     
     if len(guild_data["hats"][hat_name]) < 2:
@@ -156,7 +156,7 @@ async def hat_members(ctx, hat_name: str):
         
         await ctx.response.send_message(f"Participants in **{hat_name}**:\n{participants_string}")
     else:
-        await ctx.response.send_message(f"No hat found with the name: {hat_name}")
+        await ctx.response.send_message(f"No hat found with the name: **{hat_name}**")
     
 
 
@@ -164,10 +164,14 @@ async def hat_members(ctx, hat_name: str):
 @tree.command(name="help", description="A list of the commands.")
 async def help(ctx):
     """A list of the commands."""
-    await ctx.response.send_message(f'/join: use to make a new hat or join an existing one (include name of hat).\n/hats: see a list of all the current hats.\n/delete: delete a hat.\n/draw: draw a name from a hat (include name of hat).\n')
-    # await ctx.response.send_message(f'/hats: see a list of all the current hats.\n')
-    # await ctx.response.send_message(f'/delete: delete a hat.\n')
-    # await ctx.response.send_message(f'/draw: draw a name from a hat (include name of hat).\n')
+
+    response = (f'- **/join**: use to make a new hat or join an existing one. Include hat name.\n')
+    response += (f'- **/hats**: see a list of all the current hats.\n')
+    response += (f'- **/delete**: delete a hat. Include hat name.\n')
+    response += (f'- **/draw**: draw a name from a hat. Include hat name.\n')
+    response += (f'- **/hat_members**: see all the members in any hat. Include hat name.')
+    await ctx.response.send_message(f'{response}')
+
 
 
 @bot.event
