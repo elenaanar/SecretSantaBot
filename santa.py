@@ -122,11 +122,12 @@ async def draw_name(ctx, hat_name: str = "New Hat"):
 async def delete_hat(ctx, hat_name: str):
     """Delete a Secret Santa hat."""
     
-    data = load_data(ctx.guild_id)
+    data = load_data()
+    guild_id = str(ctx.guild.id) 
 
-    if hat_name in data["hats"]:
-        del data["hats"][hat_name]
-        save_data(data, ctx.guild_id)
+    if hat_name in data["guilds"][guild_id]["hats"]:
+        del data["guilds"][guild_id]["hats"][hat_name]
+        save_data(data)
         await ctx.response.send_message(f'The **{hat_name}** hat has been deleted.')
     else:
         await ctx.response.send_message(f'The **{hat_name}** hat does not exist.')
