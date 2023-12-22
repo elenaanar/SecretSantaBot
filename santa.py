@@ -13,16 +13,16 @@ intents.members = True
 bot = discord.Client(intents=intents)
 tree = app_commands.CommandTree(bot)
 
-def load_data(guild_id):
-    filename = f'hats_{guild_id}.json'
+def load_data():
     try:
-        with open(filename, 'r') as file:
-            return json.load(file)
+        with open('all_guilds.json', 'r') as file:
+            data = json.load(file)
     except FileNotFoundError:
-        return {"hats": {}}
+        data = {"guilds": {}}
+    return data
 
-def save_data(data, guild_id):
-    filename = f'hats_{guild_id}.json'
+def save_data(data):
+    filename = 'all_guilds.json'
     with open(filename, 'w') as file:
         json.dump(data, file)
 
@@ -31,33 +31,47 @@ def save_data(data, guild_id):
 async def list_hats(ctx):
     """List all available Secret Santa hats."""
 
-    data = load_data(ctx.guild_id)
+    data = load_data()
+    guild_id = str(ctx.guild.id) 
 
-    if not data["hats"]:
-        await ctx.response.send_message("There are no Secret Santa hats available.")
+    if guild_id not in data["guilds"]:
+        await ctx.response.send_message("This server doesn't have any Secret Santa hats.")
         return
 
-    hat_list = "\n".join(f"- {hat}" for hat in data["hats"].keys())
-    await ctx.response.send_message(f"Available Secret Santa hats:\n{hat_list}")
+    guild_data = data["guilds"][guild_id]
+
+    if not guild_data.get("hats"):
+        await ctx.response.send_message("There are no Secret Santa hats available for this server. Use /join to make one!")
+        return
+
+    hat_list = "\n".join(f"- {hat}" for hat in guild_data["hats"].keys())
+    await ctx.response.send_message(f"Available Secret Santa hats for this guild:\n{hat_list}")
 
 @tree.command(name="join", description="Join a Secret Santa hat!")
 async def join_hat(ctx, hat_name: str = "New Hat"):
     """Join a Secret Santa hat."""
 
-    data = load_data(ctx.guild_id)
+    data = load_data()
+    guild_id = str(ctx.guild.id) 
 
-    if hat_name not in data["hats"]: # creating a hat if need be
-        data["hats"][hat_name] = []
+    if guild_id not in data["guilds"]:
+        data["guilds"][guild_id] = {"hats": {}}
+
+
+    guild_data = data["guilds"][guild_id]
+
+    if hat_name not in guild_data["hats"]: # creating a hat if need be
+        data["guilds"][guild_id]["hats"][hat_name] = [] #gross
     
-    hat_data = data["hats"].get(hat_name, []) # getting the pairs from the input hat
+    hat_data = guild_data["hats"].get(hat_name, []) # getting the pairs from the input hat
 
-    if len(hat_data)  > 0 and -1 not in [p["drawn"] for p in hat_data]: #if all the users have been drawn 
+    if len(hat_data) > 0 and -1 not in [p["drawn"] for p in hat_data]: #if all the users have been drawn 
         await ctx.response.send_message(f'{ctx.user.name} you cannot join the **{hat_name}** hat, it\'s all full! You can make a new hat with /join')
         return
     
-    if ctx.user.id not in [pair["participant"] for pair in data["hats"][hat_name]]:
-        data["hats"][hat_name].append({"participant": ctx.user.id, "drawn": -1})
-        save_data(data, ctx.guild_id)
+    if ctx.user.id not in [pair["participant"] for pair in guild_data["hats"][hat_name]]:
+        data["guilds"][guild_id]["hats"][hat_name].append({"participant": ctx.user.id, "drawn": -1})
+        save_data(data)
         await ctx.response.send_message(f'{ctx.user.name} joined the **{hat_name}** Secret Santa hat!')
     else:
         await ctx.response.send_message(f'{ctx.user.name}, you are already in the **{hat_name}** hat.')
