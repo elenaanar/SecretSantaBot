@@ -35,7 +35,7 @@ async def list_hats(ctx):
     guild_id = str(ctx.guild.id) 
 
     if guild_id not in data["guilds"]:
-        await ctx.response.send_message("This server doesn't have any Secret Santa hats.")
+        await ctx.response.send_message("This server doesn't have any Secret Santa hats. Add one with /join!")
         return
 
     guild_data = data["guilds"][guild_id]
@@ -80,20 +80,28 @@ async def join_hat(ctx, hat_name: str = "New Hat"):
 async def draw_name(ctx, hat_name: str = "New Hat"):
     """Draw a Secret Santa name."""
     
-    data = load_data(ctx.guild_id)
+    data = load_data()
+    guild_id = str(ctx.guild.id) 
 
-    if hat_name not in data["hats"]:
+    if guild_id not in data["guilds"]:
+        await ctx.response.send_message("This server doesn't have any Secret Santa hats. Add one with /join!")
+        return
+
+    guild_data = data["guilds"][guild_id]
+
+    if hat_name not in guild_data["hats"]:
         await ctx.response.send_message(f'There is no **{hat_name}**! Use /join to add one!')
         return
-    if len(data["hats"][hat_name]) < 2:
+    
+    if len(guild_data["hats"][hat_name]) < 2:
         await ctx.response.send_message(f'Not enough participants in the **{hat_name}** hat to draw names.')
         return
 
     user_id = ctx.user.id
-    drawn_pair = next((pair for pair in data["hats"][hat_name] if pair["participant"] == user_id), None)
+    drawn_pair = next((pair for pair in data["guilds"][guild_id]["hats"][hat_name] if pair["participant"] == user_id), None)
 
     if drawn_pair is None or drawn_pair["drawn"] == -1:
-        hat_data = data["hats"].get(hat_name, []) # getting the pairs from the input hat
+        hat_data = guild_data["hats"].get(hat_name, []) # getting the pairs from the input hat
     
         available_participants = [pair["participant"] for pair in hat_data if pair["participant"] != user_id and pair["participant"] not in [p["drawn"] for p in hat_data]]
         if not available_participants:
@@ -103,7 +111,7 @@ async def draw_name(ctx, hat_name: str = "New Hat"):
         drawn_id = random.choice(available_participants) if available_participants else None
 
         drawn_pair["drawn"] = drawn_id
-        save_data(data, ctx.guild_id)
+        save_data(data)
 
         await ctx.response.send_message(f'{ctx.user.name}, you drew {bot.get_user(drawn_id).name} in the **{hat_name}** hat!', ephemeral=True)
     else:
